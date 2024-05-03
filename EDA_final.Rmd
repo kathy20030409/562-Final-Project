@@ -1,7 +1,7 @@
 ---
 title: "EDA"
-author: "Pan Lu, Xinyu Liu"
-date: "2023-03-04"
+author: "Tianjun Ma, Yutong Wu, Haoran Yang, Winni Yongyu Yu"
+date: "2024-05-02"
 output:
   html_document: default
   pdf_document: default
