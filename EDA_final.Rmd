@@ -1,0 +1,147 @@
+---
+title: "EDA"
+author: "Pan Lu, Xinyu Liu"
+date: "2023-03-04"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Library Import 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen=999)
+library(readr)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+```
+
+## Load the Data
+```{r}
+Heart <- read_csv("heart_2020_cleaned.csv",show_col_types = FALSE)
+head(Heart)
+```
+```{r}
+dim(Heart)
+```
+There are 319795 rows, and 18 columns in the Heart dataset. 
+
+```{r}
+glimpse(Heart)
+```
+```{r}
+Heart <- Heart %>% select(where(is.double), everything()) # Mutate the order of columns so that columns which store numerical values are listed first
+head(Heart)
+```
+```{r}
+str(Heart)
+```
+## Check for missing data
+```{r}
+sum(is.na(Heart))
+```
+
+## Distributions of variables
+```{r}
+colnames(Heart) # These are the variables
+```
+```{r}
+par(mfrow=c(2,2)) # Setup grid, margins
+hist(Heart$BMI, xlab=colnames(Heart)[1],
+       main=paste("Histogram of", colnames(Heart)[1]),
+       col="lightblue")
+hist(Heart$PhysicalHealth, xlab=colnames(Heart)[2],
+       main=paste("Histogram of", colnames(Heart)[2]),
+       col="lightblue")
+hist(Heart$MentalHealth, xlab=colnames(Heart)[3],
+       main=paste("Histogram of", colnames(Heart)[3]),
+       col="lightblue")
+hist(Heart$SleepTime, xlab=colnames(Heart)[4],
+       main=paste("Histogram of", colnames(Heart)[4]),
+       col="lightblue")
+```
+
+The distributions of "MentalHealth" and "Physical Health" variables are right skewed. Therefore, we are able to find that most people's mental health is good, leading to zero value of both PhysicalHealth and MentalHealth variable.  
+The distribution of BMI variable is right skewed. 
+The sleepTime variable is normally distributed. Thus, we are able to find that most people have SleepTime of 7-8 hours. 
+
+```{r}
+par(mfrow=c(4,4), mar = c(1, 3, 1,2))
+for (i in 5 : 18) {
+  counts <- table(Heart[,i])
+  probs <- prop.table(counts)
+  pie(probs, main = colnames(Heart)[i],labels = paste0(names(probs), ": ", round(probs * 100, 2), "%"), cex.main = 0.8)
+}
+```
+
+We can find that the variables, HeartDisease, Smoking, AlcoholDrinking, Stroke, DiffWalking, Sex, PhysicalHealth, Asthma, KidneyDisease and SkinCancer are binary variables. 
+For the race variable, most of people in the dataset are white. 
+## Correlations between variables
+```{r}
+heart.cor = cor(Heart[,1:4])
+round(heart.cor,3)
+```
+
+```{r}
+heart.cor[lower.tri(heart.cor,diag = TRUE)] = 0
+heart.cor.sorted = sort(abs(heart.cor),decreasing=T)
+heart.cor.sorted[1]
+```
+The largest correlation is not very high, which means the possibility of collinearity is low. 
+## Check for outliers
+```{r}
+par(mfrow=c(2,2)) # Setup grid, margins
+boxplot(Heart$BMI, xlab=colnames(Heart)[1],
+       main=paste("Bar plot of", colnames(Heart)[1]),
+       col="lightblue")
+boxplot(Heart$PhysicalHealth, xlab=colnames(Heart)[2],
+       main=paste("Bar plot of", colnames(Heart)[2]),
+       col="lightblue")
+boxplot(Heart$MentalHealth, xlab=colnames(Heart)[3],
+       main=paste("Bar plot of", colnames(Heart)[3]),
+       col="lightblue")
+boxplot(Heart$SleepTime, xlab=colnames(Heart)[4],
+       main=paste("Bar plot of", colnames(Heart)[4]),
+       col="lightblue")
+```
+
+## Visualizing relationships among variables
+```{r}
+pairs(~ BMI + PhysicalHealth + MentalHealth + SleepTime, data=Heart)
+```
+
+There is no apparent correlation among these variables.
+
+## Testing means between two different groups
+```{r}
+table(Heart$HeartDisease)
+```
+
+Let's take a look at how whether having heart disease or not relates to BMI, PhysicalHealth, MentalHealth, and SleepTime.
+```{r}
+Heart$HeartDisease = factor(Heart$HeartDisease) 
+par(mfrow=c(2,2))
+plot(Heart$HeartDisease, Heart$BMI, main="BMI versus HeartDisease",
+     xlab="HeartDisease", ylab="BMI")
+plot(Heart$HeartDisease, Heart$PhysicalHealth, main="PhysicalHealth versus HeartDisease",
+     xlab="HeartDisease", ylab="PhysicalHealth")
+plot(Heart$HeartDisease, Heart$MentalHealth, main="MentalHealth versus HeartDisease",
+     xlab="HeartDisease", ylab="MentalHealth")
+plot(Heart$HeartDisease, Heart$SleepTime, main="SleepTime versus HeartDisease",
+     xlab="HeartDisease", ylab="SleepTime")
+```
+
+Visually, BMI is slightly higher for those with HeartDisease; Mean of PhysicalHealth is approximately the same, however, high PhysicalHealth seems to be correlated to HeartDisease. Mean of MentalHealth is approximatedly the same, however, high MentalHealth seems to be correlated to HeartDisease. There is not a big difference in SleepTime.
+
+```{r}
+t.test(Heart$BMI[Heart$HeartDisease=="No"],
+       Heart$BMI[Heart$HeartDisease=="Yes"])
+t.test(Heart$PhysicalHealth[Heart$HeartDisease=="No"],
+       Heart$PhysicalHealth[Heart$HeartDisease=="Yes"])
+t.test(Heart$MentalHealth[Heart$HeartDisease=="No"],
+       Heart$MentalHealth[Heart$HeartDisease=="Yes"])
+t.test(Heart$SleepTime[Heart$HeartDisease=="No"],
+       Heart$SleepTime[Heart$HeartDisease=="Yes"])
+```
+Confirms what we saw visually. Besides, all the four variables are statistically significant.
